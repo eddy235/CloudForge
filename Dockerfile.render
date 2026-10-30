@@ -13,7 +13,8 @@ RUN git init --quiet \
     && git remote add origin https://github.com/eddy235/NexusDesk.git \
     && git fetch --depth=1 origin "${NEXUSDESK_COMMIT}" \
     && git checkout --quiet --detach FETCH_HEAD \
-    && test "$(git rev-parse HEAD)" = "${NEXUSDESK_COMMIT}"
+    && test "$(git rev-parse HEAD)" = "${NEXUSDESK_COMMIT}" \
+    && rm -rf .git
 
 FROM python:3.12-slim
 
