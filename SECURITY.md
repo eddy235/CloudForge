@@ -19,3 +19,11 @@ This project demonstrates security-conscious cloud engineering, but is **not** a
 - No cloud service, AWS account or secret has been accessed; a verified real deployment requires the user’s explicit cloud configuration, billing approval and live HTTPS smoke check.
 
 Report vulnerabilities privately to the repository owner rather than posting secrets in a public issue.
+
+## AWS-free Render deployment controls
+
+- `Dockerfile.render` fetches a reviewed fixed NexusDesk commit and removes checkout metadata before packaging the runtime image. The final user is non-root.
+- `render.yaml` defines a separate optional **Free** web service with a randomly generated secret, fictional demo mode, DEBUG disabled, TLS at the Render edge, health checks and CI-gated deployments.
+- The demo uses no operational data or writable persistent database. Staff/admin routes are rejected by the pinned app's demo middleware; the hosted service must never run with demo mode disabled.
+- Free Render instances sleep when idle, have ephemeral filesystems and share workspace usage limits. A separate deployment must be approved; adding the Blueprint source creates no service by itself.
+- This is **Render deployment experience**, not AWS infrastructure administration. The AWS Terraform code remains intentionally optional, non-deployed and AWS-credential-free in CI.
