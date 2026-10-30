@@ -1,0 +1,17 @@
+**/.git
+**/.env
+**/.env.*
+**/db.sqlite3
+**/*.sqlite3
+**/portfolio.db
+**/credentials*
+**/.aws
+**/__pycache__
+**/*.pyc
+**/.venv
+**/venv
+**/.terraform
+**/*.tfstate*
+**/node_modules
+**/staticfiles
+**/.DS_Store

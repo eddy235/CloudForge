@@ -1,0 +1,83 @@
+name: CI - CloudForge v0.1
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout CloudForge
+        uses: actions/checkout@v4
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Offline security, source and release tests
+        run: python -m unittest discover -s tests -v
+
+  terraform-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout CloudForge
+        uses: actions/checkout@v4
+      - name: Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.12.2"
+      - name: Check formatting
+        run: terraform -chdir=infra/terraform fmt -check -diff -recursive
+      - name: Initialize locally without a backend
+        run: terraform -chdir=infra/terraform init -backend=false -input=false
+      - name: Validate infrastructure code (no AWS apply)
+        run: terraform -chdir=infra/terraform validate -no-color
+
+  container-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout CloudForge
+        uses: actions/checkout@v4
+      - name: Checkout pinned NexusDesk v1.0 application
+        uses: actions/checkout@v4
+        with:
+          repository: eddy235/NexusDesk
+          ref: 12a96a72418d13dd49f918584f7140a402aff0fa
+          path: upstream/NexusDesk
+          persist-credentials: false
+      - name: Confirm pinned source
+        run: |
+          ACTUAL=$(git -C upstream/NexusDesk rev-parse HEAD)
+          EXPECTED=$(sed -n 's/^COMMIT=//p' UPSTREAM_VERSION)
+          test "$ACTUAL" = "$EXPECTED"
+      - name: Build non-root Docker image
+        run: docker build -t cloudforge-demo:test .
+      - name: Start public fictional-data demo on loopback
+        run: |
+          docker run --detach --name cloudforge-ci \
+            --read-only --tmpfs /tmp:size=16m,noexec,nosuid \
+            --security-opt no-new-privileges --cap-drop ALL \
+            -p 127.0.0.1:8000:8000 \
+            -e DJANGO_SECRET_KEY=ci-demo-secret-long-enough-to-run-isolated-container \
+            -e NEXUSDESK_DEMO_MODE=true -e DJANGO_DEBUG=false \
+            -e DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost \
+            -e DJANGO_SECURE_SSL_REDIRECT=false \
+            -e DJANGO_ENABLE_HSTS=false \
+            cloudforge-demo:test
+          for i in $(seq 1 25); do
+            if curl --silent --fail http://127.0.0.1:8000/health/ >/dev/null; then break; fi
+            sleep 2
+          done
+      - name: Exercise demo isolation and content security
+        run: python scripts/smoke_local.py
+      - name: Print container logs on failure
+        if: failure()
+        run: docker logs cloudforge-ci || true
+      - name: Clean up local container
+        if: always()
+        run: docker rm --force cloudforge-ci || true

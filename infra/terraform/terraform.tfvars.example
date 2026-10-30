@@ -1,0 +1,5 @@
+aws_region        = "eu-west-1"
+project_name      = "cloudforge"
+github_repository = "eddy235/CloudForge"
+# Supply an existing GitHub OIDC provider ARN only when you are ready to enable manual ECR publishing.
+# github_oidc_provider_arn = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
