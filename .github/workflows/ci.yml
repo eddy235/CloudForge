@@ -1,4 +1,4 @@
-name: CI - CloudForge v0.1
+name: CI - CloudForge v0.2
 
 on:
   push:
