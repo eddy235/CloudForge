@@ -1,62 +1,73 @@
-# CloudForge — Secure Cloud & DevSecOps (AWS optional)
+# CloudForge — Secure cloud delivery (AWS optional)
 
-**Cloud engineering · Docker · Terraform · AWS ECR · GitHub Actions · OIDC · Python**
+**Docker · GitHub Actions · Render · Trivy · Python · Terraform · optional AWS OIDC/ECR**
 
-CloudForge is a portfolio engineering project that turns [NexusDesk v1.0](https://github.com/eddy235/NexusDesk) into a reproducible, security-reviewed container image, introduces automated CI checks, and describes an optional AWS deployment path. It deliberately builds the public **fictional-data demo**—not the operational helpdesk.
+CloudForge is the build, security and delivery system around the fictional
+[NexusDesk demo](https://github.com/eddy235/NexusDesk). Its portfolio value is
+container delivery and operations; the helpdesk application is a separate project.
 
-> **Current scope: v0.2 infrastructure and deployment workflow, tested offline. AWS infrastructure has NOT been provisioned and no AWS deployment URL exists yet.**
+**Live demo:** https://cloudforge-demo.onrender.com/demo/
 
-## AWS-free deployment track
+**Current milestone: v0.3 — Render release hardening and operational verification.**
+Render is deployed on the Free plan. The AWS configuration remains optional,
+disabled by default and unprovisioned. No AWS account is needed for the main path.
 
-**An AWS account is not required to continue CloudForge.** The project now
-includes a Docker build and `render.yaml` for deployment on Render, which
-already hosts the separate NexusDesk demo, SecureScan and portfolio site.
+## What this release demonstrates
 
-- `Dockerfile.render` pulls the exact pinned public NexusDesk SHA during
-  the image build so Render can build from the CloudForge repository alone.
-- A **Free** Render web-service Blueprint defines a fictional read-only demo,
-  a health check, GitHub CI-gated automatic deployments and a generated secret.
-- GitHub CI builds and tests the Render image alongside the original local
-  Docker and AWS Terraform checks.
-- **Deployment is optional and has not been created** by the source changes.
-  Review your Render workspace's Free instance-hours and bandwidth first.
-- AWS App Runner remains a separate, disabled-by-default learning blueprint
-  and has **not** been deployed or tested against an AWS account.
+- NexusDesk source pinned to the reviewed commit in `UPSTREAM_VERSION`.
+- Both Dockerfiles pin the official Python base image to a reviewed digest.
+- Non-root runtime and loopback-only, read-only container tests.
+- GitHub CI tests source, validates Terraform without applying it, builds both
+  image variants and exercises the synthetic demo's security boundaries.
+- The Render-image job saves a full vulnerability report and CycloneDX SBOM,
+  then fails on **fixable HIGH or CRITICAL** OS/library vulnerabilities. Unfixed
+  findings remain visible in the full report. Scanner failures fail the job.
+- Workflow actions are pinned to full commit SHAs. CI needs no cloud credentials.
+- A bounded HTTPS checker records 13 checks, response times and failure evidence
+  as JSON. It retries readiness for cold starts, rejects unsafe destinations and
+  redirects, and checks demo identity before attempting empty blocked POSTs.
+- GitHub's **Verify live Render demo** workflow checks the deployed demo when its
+  checker changes on main, or on demand. It uploads reports and a job summary.
+  It does not deploy a revision and is not continuous uptime monitoring.
 
-See [AWS-free Render deployment instructions](docs/RENDER_DEPLOYMENT.md).
+## The actual Render configuration
 
-## What works in this release
+| Setting | Live service |
+|---|---|
+| Source | `eddy235/CloudForge`, `main` |
+| Dockerfile | `Dockerfile.render` |
+| Region / compute plan | Oregon / Free |
+| Mode | Fictional read-only demo; DEBUG off |
+| Automatic deployments | **Off**; deployment follows manual CI review |
+| Render health check | Default **TCP** probe |
+| Application health | `/health/`, separately checked over HTTPS |
+| Data / database | Synthetic examples; no operational database |
 
-- Reproducible checkout of NexusDesk at the pinned upstream commit in [`UPSTREAM_VERSION`](UPSTREAM_VERSION).
-- Docker image running as a non-root user, collected Django static assets, healthcheck, Gunicorn and no baked secrets.
-- Docker Compose with loopback-only port, read-only filesystem, temporary filesystem, dropped Linux capabilities and `no-new-privileges`.
-- Python HTTP smoke test that verifies public synthetic content, restrictive CSP, protected login/admin/ticket/report URLs and denied write attempts.
-- GitHub Actions CI for unit checks, Terraform static validation, Docker build, and demo smoke checks.
-- Terraform IaC for encrypted, immutable [Amazon ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html) repository, image scanning, image lifecycle cleanup, and an optional **branch-restricted** GitHub OIDC role.
-- A separate **manually triggered** ECR publish workflow. There is **no automatic AWS deployment**.
-- **v0.2:** Opt-in AWS App Runner runtime using private ECR, managed public HTTPS, a small one-instance limit, HTTP health checks, and an IAM role that reads only one pre-created SSM SecureString for the Django secret.
-- **v0.2:** `enable_runtime=false` by default; runtime creation requires an already published immutable Git-SHA image and an existing SSM parameter ARN. App Runner cost review is mandatory before any apply.
-- **v0.2:** Standalone HTTPS smoke script and manually triggered GitHub verification with no AWS credentials.
+The service was created directly through the Render connection. It is **not
+managed by a Blueprint**. `render.yaml` is an optional configuration reference
+with HTTP health checks and CI-gated auto-deployment; editing it does not change
+this existing service. Those two settings still need Dashboard configuration.
 
-## Architecture
+[Demo](https://cloudforge-demo.onrender.com/demo/) ·
+[Render service](https://dashboard.render.com/web/srv-dbi4erks728c73cajlag) ·
+[GitHub Actions](https://github.com/eddy235/CloudForge/actions)
 
-```mermaid
-flowchart LR
-  Source[NexusDesk pinned fictional demo] --> CI[CloudForge CI and Docker checks]
-  CI --> Local[Loopback-only smoke tests]
-  CI --> Gate{Manual AWS activation?}
-  Gate -->|No| Stop[No AWS runtime]
-  Gate -->|Approved| Publish[Manual GitHub OIDC publish]
-  Publish --> ECR[Private immutable ECR]
-  ECR --> AppRunner[AWS App Runner: managed public HTTPS]
-  Secret[SSM SecureString parameter] --> AppRunner
-  AppRunner --> Smoke[Manual HTTPS verification]
+## Verify the deployed service
+
+```bash
+python scripts/smoke_cloud.py https://cloudforge-demo.onrender.com \
+  --report reports/render-verification.json
 ```
 
-See [architecture and trust boundaries](docs/ARCHITECTURE.md) and
-[v0.2 AWS deployment runbook](docs/AWS_DEPLOYMENT.md).
+CLI readiness defaults to eight attempts with five seconds between retries;
+each request times out after 15 seconds. Security/content failures are not
+retried. JSON excludes response bodies, header values and secrets. The
+`verifier_revision` field identifies the checker, not the deployed image.
 
-## Quick start (no AWS account needed)
+For an optional App Runner demo, supply its HTTPS origin to the same script.
+Only `*.onrender.com` and `*.awsapprunner.com` origins on standard HTTPS are allowed.
+
+## Local build and tests
 
 Prerequisites: Git, Python 3.11+, Docker Engine/Desktop with Compose.
 
@@ -65,46 +76,48 @@ python scripts/fetch_upstream.py
 docker compose up --build -d
 python scripts/smoke_local.py
 docker compose down
-```
-
-Open **http://127.0.0.1:8000/demo/** after startup. The local preview is explicitly not a cloud deployment; no employee data, accounts or writes are available.
-
-For offline project validation:
-
-```bash
 python -m unittest discover -s tests -v
 ```
 
-## Review Terraform, without changing AWS
+Local preview: **http://127.0.0.1:8000/demo/**. The self-contained Render image
+can also be built with `docker build -f Dockerfile.render -t cloudforge-render:test .`.
+
+## Release evidence and limits
+
+In each successful CI run, download `render-image-evidence-<SHA>` for the
+full Trivy JSON, CycloneDX SBOM, image ID and source checksums. Operational
+workflows save separate verification artifacts. Artifacts expire after seven days.
+
+The SBOM inventories the **CI-built image**, not the running Render container.
+Python dependency ranges in the pinned upstream still resolve at build time;
+full dependency locking and signed provenance are future work. A source/base
+pin alone does not prove bit-for-bit image reproducibility. The live service's
+source revision must be checked in its Render deploy record.
+
+Automatic deploys remain off. The image gate is a CI check, not an enforced
+Render release gate or GitHub branch-protection policy. Follow the documented
+manual release checklist until those controls are configured.
+
+## Optional AWS reference
+
+Terraform includes immutable ECR, branch-scoped GitHub OIDC and an opt-in App
+Runner runtime. `enable_runtime=false` by default. No AWS resources have been
+provisioned or verified with an AWS account. CI never runs `terraform apply`.
 
 ```bash
-cd infra/terraform
-terraform fmt -check -recursive
-terraform init -backend=false
-terraform validate
+terraform -chdir=infra/terraform fmt -check -recursive
+terraform -chdir=infra/terraform init -backend=false -input=false
+terraform -chdir=infra/terraform validate
 ```
 
-`init` downloads the AWS provider plugin. Validation makes **no managed resources**, but ensure your AWS credentials and account are reviewed before using `plan` or `apply`.
-
-Terraform creates an ECR registry on **explicit apply only**. An OIDC publishing role is created only when you supply a reviewed existing GitHub OIDC provider ARN. An AWS App Runner service is added **only when** `enable_runtime=true` and an immutable published image SHA plus a pre-created SSM secret ARN are supplied. No database, NAT gateway, ALB or EC2 server is provisioned. AWS App Runner has ongoing compute charges, including provisioned memory when idle. [Deployment and cost review](docs/AWS_DEPLOYMENT.md).
-
-## GitHub Actions
-
-- **`CI — CloudForge`**: runs automatically on pushes and PRs. No AWS permissions.
-- **`Publish container to ECR (manual)`**: runs only when manually triggered on main. It requires AWS OIDC role and ECR repository URL in GitHub Actions variables. It will fail closed if these have not been configured; it does not provision AWS resources.
-- **`Verify AWS demo HTTPS (manual, no AWS credentials)`**: checks a user-supplied HTTPS origin only after an intentional deployment, including security headers and blocked private/write routes.
-
-The dedicated GitHub repository is **[`eddy235/CloudForge`](https://github.com/eddy235/CloudForge)**. Terraform OIDC trust is limited to this repository’s `main` branch. The starter source is published here; infrastructure has not been provisioned.
+AWS publishing remains a separate manually triggered workflow requiring reviewed
+OIDC configuration and cost decisions. See [AWS deployment](docs/AWS_DEPLOYMENT.md).
 
 ## Project materials
 
-- [Render deployment (no AWS account required)](docs/RENDER_DEPLOYMENT.md)
-- [Optional AWS v0.2 deployment instructions, costs and rollback](docs/AWS_DEPLOYMENT.md)
-- [Architecture](docs/ARCHITECTURE.md)
+- [Render deployment and live configuration](docs/RENDER_DEPLOYMENT.md)
+- [Release checklist, scan policy and operational reports](docs/OPERATIONS.md)
+- [Architecture and trust boundaries](docs/ARCHITECTURE.md)
 - [Operator runbook](docs/RUNBOOK.md)
 - [Security boundaries](SECURITY.md)
 - [Milestone roadmap](ROADMAP.md)
-
-**Release distinction:** v0.2 code, Terraform validation and local container verification can be complete **without claiming an actual AWS service has been deployed**. Do not link to an invented App Runner URL.
-
-**Portfolio positioning:** Demonstrates infrastructure automation, reproducible containers, supply-chain hygiene, least-privilege workload publishing and deploy safety; the application functionality comes from the separate NexusDesk project.

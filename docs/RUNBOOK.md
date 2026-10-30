@@ -1,4 +1,11 @@
-# CloudForge v0.1 operator runbook
+# CloudForge operator runbook
+
+## Active Render service
+
+The live fictional demo is https://cloudforge-demo.onrender.com/demo/.
+Use [OPERATIONS.md](OPERATIONS.md) for the current release checklist, scan policy,
+JSON checks and recovery instructions. Auto-deploy is off; platform health checks
+are TCP. The optional Blueprint is not the source of truth for the live service.
 
 ## First-time local environment
 

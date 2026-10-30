@@ -1,7 +1,7 @@
 # CloudForge: Git-backed Docker build for Render, independent of AWS.
 # Only the publicly released *fictional, read-only* NexusDesk demo is included.
 # The exact upstream source hash must match the reviewed UPSTREAM_VERSION file.
-FROM python:3.12-slim AS upstream-source
+FROM python:3.12-slim@sha256:aa943ce411423c7582288f18707ff66eddcbaeb510502d747a72aeb34f30d159 AS upstream-source
 
 ARG NEXUSDESK_COMMIT=12a96a72418d13dd49f918584f7140a402aff0fa
 
@@ -16,7 +16,7 @@ RUN git init --quiet \
     && test "$(git rev-parse HEAD)" = "${NEXUSDESK_COMMIT}" \
     && rm -rf .git
 
-FROM python:3.12-slim
+FROM python:3.12-slim@sha256:aa943ce411423c7582288f18707ff66eddcbaeb510502d747a72aeb34f30d159
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
