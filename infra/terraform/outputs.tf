@@ -12,3 +12,18 @@ output "aws_account_id" {
   description = "AWS account being configured (for sanity checks)."
   value       = data.aws_caller_identity.current.account_id
 }
+
+output "apprunner_service_url" {
+  description = "HTTPS service origin only after explicitly enabling and applying paid AWS App Runner runtime."
+  value       = length(aws_apprunner_service.nexusdesk_demo) > 0 ? "https://${aws_apprunner_service.nexusdesk_demo[0].service_url}" : null
+}
+
+output "apprunner_service_arn" {
+  description = "ARN used for AWS CLI pause/resume and service operations after the paid runtime is created."
+  value       = length(aws_apprunner_service.nexusdesk_demo) > 0 ? aws_apprunner_service.nexusdesk_demo[0].arn : null
+}
+
+output "runtime_enabled" {
+  description = "Whether paid App Runner resources are enabled in this Terraform configuration."
+  value       = var.enable_runtime
+}
