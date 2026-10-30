@@ -3,3 +3,12 @@ project_name      = "cloudforge"
 github_repository = "eddy235/CloudForge"
 # Supply an existing GitHub OIDC provider ARN only when you are ready to enable manual ECR publishing.
 # github_oidc_provider_arn = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
+
+# v0.2: keep FALSE to prevent any AWS App Runner compute charges.
+enable_runtime = false
+
+# Only AFTER you have applied the registry, published an immutable image,
+# and stored DJANGO_SECRET_KEY as an AWS SSM SecureString parameter:
+# enable_runtime            = true
+# runtime_image_tag         = "0123456789abcdef0123456789abcdef01234567"
+# demo_secret_parameter_arn = "arn:aws:ssm:eu-west-1:123456789012:parameter/cloudforge/demo-secret"

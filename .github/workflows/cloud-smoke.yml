@@ -1,0 +1,29 @@
+name: Verify AWS demo HTTPS (manual, no AWS credentials)
+
+on:
+  workflow_dispatch:
+    inputs:
+      service_origin:
+        description: "Exact HTTPS origin of the deployed fictional NexusDesk App Runner demo"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout CloudForge
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify deployed HTTPS demo without any AWS actions
+        env:
+          SERVICE_ORIGIN: ${{ inputs.service_origin }}
+        run: python scripts/smoke_cloud.py "$SERVICE_ORIGIN"
