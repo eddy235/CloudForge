@@ -1,0 +1,55 @@
+name: Publish container to ECR (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: cloudforge-manual-ecr-push
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # Explicitly limit credentials to approved main-branch code.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify AWS settings are explicitly configured
+        env:
+          AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+          ECR_REPOSITORY_URI: ${{ vars.ECR_REPOSITORY_URI }}
+        run: |
+          if [ -z "$AWS_ROLE_ARN" ] || [ -z "$ECR_REPOSITORY_URI" ]; then
+            echo 'AWS role and ECR repository variables are not configured; no publishing attempted.'
+            exit 1
+          fi
+      - name: Checkout CloudForge
+        uses: actions/checkout@v4
+      - name: Checkout pinned NexusDesk v1.0 application
+        uses: actions/checkout@v4
+        with:
+          repository: eddy235/NexusDesk
+          ref: 12a96a72418d13dd49f918584f7140a402aff0fa
+          path: upstream/NexusDesk
+          persist-credentials: false
+      - name: Build reviewed image
+        run: docker build -t cloudforge-demo:test .
+      - name: Request short-lived AWS credentials using GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-west-1' }}
+          role-session-name: CloudForgeManualPush
+      - name: Authenticate to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Push immutable commit-tagged image
+        env:
+          REPO: ${{ vars.ECR_REPOSITORY_URI }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker tag cloudforge-demo:test "$REPO:$IMAGE_TAG"
+          docker push "$REPO:$IMAGE_TAG"
+          echo "Image published as $REPO:$IMAGE_TAG"
