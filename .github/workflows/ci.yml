@@ -81,3 +81,35 @@ jobs:
       - name: Clean up local container
         if: always()
         run: docker rm --force cloudforge-ci || true
+
+  render-container:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout CloudForge
+        uses: actions/checkout@v4
+      - name: Build self-contained Render image from pinned NexusDesk commit
+        run: docker build --file Dockerfile.render --tag cloudforge-render:test .
+      - name: Launch isolated fictional demo
+        run: |
+          docker run --detach --name cloudforge-render-ci \
+            --read-only --tmpfs /tmp:size=16m,noexec,nosuid \
+            --security-opt no-new-privileges --cap-drop ALL \
+            -p 127.0.0.1:8000:8000 \
+            -e DJANGO_SECRET_KEY=ci-only-render-demo-long-random-test-secret \
+            -e NEXUSDESK_DEMO_MODE=true -e DJANGO_DEBUG=false \
+            -e DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost \
+            -e DJANGO_SECURE_SSL_REDIRECT=false \
+            -e DJANGO_ENABLE_HSTS=false \
+            cloudforge-render:test
+          for i in $(seq 1 25); do
+            if curl --silent --fail http://127.0.0.1:8000/health/ >/dev/null; then break; fi
+            sleep 2
+          done
+      - name: Verify demo is fictional and operational URLs stay inaccessible
+        run: python scripts/smoke_local.py
+      - name: Container logs if failed
+        if: failure()
+        run: docker logs cloudforge-render-ci || true
+      - name: Clean up Render test image container
+        if: always()
+        run: docker rm --force cloudforge-render-ci || true

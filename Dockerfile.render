@@ -1,0 +1,42 @@
+# CloudForge: Git-backed Docker build for Render, independent of AWS.
+# Only the publicly released *fictional, read-only* NexusDesk demo is included.
+# The exact upstream source hash must match the reviewed UPSTREAM_VERSION file.
+FROM python:3.12-slim AS upstream-source
+
+ARG NEXUSDESK_COMMIT=12a96a72418d13dd49f918584f7140a402aff0fa
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /opt/upstream
+RUN git init --quiet \
+    && git remote add origin https://github.com/eddy235/NexusDesk.git \
+    && git fetch --depth=1 origin "${NEXUSDESK_COMMIT}" \
+    && git checkout --quiet --detach FETCH_HEAD \
+    && test "$(git rev-parse HEAD)" = "${NEXUSDESK_COMMIT}" \
+    && rm -rf .git
+
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /opt/nexusdesk
+RUN groupadd --system app && useradd --system --gid app --home-dir /opt/nexusdesk app
+
+COPY --from=upstream-source /opt/upstream/requirements.txt ./requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt && python -m pip check
+COPY --from=upstream-source /opt/upstream/ ./
+
+RUN DJANGO_DEBUG=true python manage.py collectstatic --noinput \
+    && mkdir -p /opt/nexusdesk/staticfiles \
+    && chown -R app:app /opt/nexusdesk
+
+USER app
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=3)"
+
+# Never switch the public Render service into operational helpdesk mode.
+CMD ["gunicorn", "nexusdesk.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "2", "--access-logfile", "-", "--error-logfile", "-"]

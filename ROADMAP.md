@@ -12,3 +12,7 @@
 The application under demonstration is the pre-existing NexusDesk fictional-data demo. CloudForge's deliverable is the **secure build/deploy and cloud infrastructure system**, not a duplicate IT helpdesk application.
 
 The next hands-on milestone is explicitly opt-in AWS provisioning, a real HTTPS endpoint and a supervised rollback demonstration. This cannot be claimed complete from offline CI alone. See [AWS deployment instructions](docs/AWS_DEPLOYMENT.md).
+
+## AWS-free milestone — Render deployment
+
+The main learning path can continue entirely through **Render and GitHub**. The AWS App Runner configuration remains a separately validated, unprovisioned reference. The Render track includes a self-contained pinned image build, no-database fictional demo, generated secret, GitHub checks, a Free web-service Blueprint and a live verification runbook. The **next step is an expressly approved Render deployment**, followed by logs, operational monitoring and release hardening. See [Render deployment](docs/RENDER_DEPLOYMENT.md).
