@@ -92,15 +92,15 @@ resource "aws_apprunner_service" "nexusdesk_demo" {
       image_configuration {
         port = "8000"
         runtime_environment_variables = {
-          NEXUSDESK_DEMO_MODE        = "true"
-          DJANGO_DEBUG               = "false"
+          NEXUSDESK_DEMO_MODE = "true"
+          DJANGO_DEBUG        = "false"
           # App Runner terminates public HTTPS before forwarding requests to
           # the container. Avoid redirecting its internal HTTP healthchecks.
           DJANGO_SECURE_SSL_REDIRECT = "false"
           DJANGO_ENABLE_HSTS         = "true"
           # The service's random hostname isn't known until after creation.
           # Restrict this *fictional demo* to AWS App Runner hostnames only.
-          DJANGO_ALLOWED_HOSTS       = ".awsapprunner.com,localhost,127.0.0.1"
+          DJANGO_ALLOWED_HOSTS = ".awsapprunner.com,localhost,127.0.0.1"
         }
         runtime_environment_secrets = {
           DJANGO_SECRET_KEY = var.demo_secret_parameter_arn
