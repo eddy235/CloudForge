@@ -45,3 +45,7 @@ Creating an ECR repository can create AWS charges for stored images and scanning
 
 - Local: `docker compose down --rmi local` (optional, removes built local image).
 - AWS: delete pushed ECR images before destroying the repository, then `terraform destroy` after reviewing resources. Terraform sets `force_delete=false` intentionally to prevent accidental deletion of stored images.
+
+## v0.2 — Optional AWS App Runner Deployment
+
+Read **[AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md)** in full before touching AWS. v0.2 provides an opt-in small managed HTTPS App Runner service behind a private immutable ECR image, requires a pre-created SSM SecureString secret, and does not create AWS runtime resources unless `enable_runtime=true` is explicitly approved. The manual cloud smoke test is `python scripts/smoke_cloud.py https://YOUR_APP_RUNNER_ORIGIN`. Review paid runtime and storage costs, AWS Budget alerts, rollbacks and pause/teardown separately. Do not run `terraform apply` or `terraform destroy` from CI.
