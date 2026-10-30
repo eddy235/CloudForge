@@ -58,7 +58,10 @@ class CloudDeploymentSecurityTests(unittest.TestCase):
         hcl = read("infra/terraform/apprunner.tf")
         self.assertIn('build.apprunner.amazonaws.com', hcl)
         self.assertIn('tasks.apprunner.amazonaws.com', hcl)
-        self.assertIn('AWSAppRunnerServicePolicyForECRAccess', hcl)
+        self.assertIn('resources = [aws_ecr_repository.nexusdesk.arn]', hcl)
+        self.assertIn('ecr:GetAuthorizationToken', hcl)
+        self.assertIn('ecr:BatchGetImage', hcl)
+        self.assertNotIn('AWSAppRunnerServicePolicyForECRAccess', hcl)
         self.assertNotIn('AdministratorAccess', hcl)
         self.assertNotIn('PowerUserAccess', hcl)
 
