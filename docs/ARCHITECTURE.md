@@ -1,4 +1,4 @@
-# CloudForge v0.1 architecture
+# CloudForge v0.2 architecture
 
 ## Goal
 Practice cloud supply-chain security and Infrastructure as Code **before** paying for workloads. The application is the isolated **fictional NexusDesk demo**, not the operational helpdesk.
@@ -13,7 +13,10 @@ flowchart LR
     E -->|No| F[No AWS resources needed]
     E -->|Yes, after IAM setup| G[GitHub OIDC short-lived AWS role]
     G --> H[AWS ECR encrypted and immutable registry]
-    H --> I[Future v0.2 runtime deployment]
+    H --> I{enable_runtime true and secret pre-created?}
+    I -->|No| J[No billable runtime]
+    I -->|Yes, deliberate apply| K[App Runner single small instance with managed HTTPS]
+    S[SSM SecureString] --> K
 ```
 
 ### Threat boundaries
@@ -27,4 +30,4 @@ flowchart LR
 
 ### v0.1 vs v0.2
 
-The ECR registry is just a place to **store** verified container images. It does not serve HTTP. A public AWS application endpoint, TLS certificate, logging, budget alerts and runtime isolation belong to v0.2, after explicit cost review.
+The v0.1 ECR registry only stores approved images; it does not serve HTTP. The optional v0.2 managed App Runner service provides public HTTPS, scoped ECR pull and SSM secret access, a health check, and bounded single-instance scaling. AWS service logs are available when deployed; no monitoring alarm, budget or actual service is created by CI. The runtime is disabled by default and requires explicit configuration before any AWS cost.
