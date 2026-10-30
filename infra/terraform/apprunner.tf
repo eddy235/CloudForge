@@ -22,10 +22,35 @@ resource "aws_iam_role" "apprunner_ecr_access" {
   assume_role_policy = data.aws_iam_policy_document.apprunner_ecr_trust[0].json
 }
 
-resource "aws_iam_role_policy_attachment" "apprunner_ecr_read" {
-  count      = var.enable_runtime ? 1 : 0
-  role       = aws_iam_role.apprunner_ecr_access[0].name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess"
+# Unlike the AWS-managed App Runner ECR policy, this custom role grants
+# image retrieval only from CloudForge's exact repository. ECR token retrieval
+# necessarily uses a wildcard resource per AWS IAM API requirements.
+data "aws_iam_policy_document" "apprunner_ecr_read" {
+  count = var.enable_runtime ? 1 : 0
+
+  statement {
+    sid       = "LoginOnly"
+    actions   = ["ecr:GetAuthorizationToken"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "ReadOnlyCloudForgeImage"
+    actions = [
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:BatchGetImage",
+      "ecr:DescribeImages",
+      "ecr:BatchCheckLayerAvailability",
+    ]
+    resources = [aws_ecr_repository.nexusdesk.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "apprunner_ecr_read" {
+  count  = var.enable_runtime ? 1 : 0
+  name   = "ReadOnlyCloudForgeImage"
+  role   = aws_iam_role.apprunner_ecr_access[0].id
+  policy = data.aws_iam_policy_document.apprunner_ecr_read[0].json
 }
 
 data "aws_iam_policy_document" "apprunner_runtime_trust" {
@@ -134,7 +159,7 @@ resource "aws_apprunner_service" "nexusdesk_demo" {
   }
 
   depends_on = [
-    aws_iam_role_policy_attachment.apprunner_ecr_read,
+    aws_iam_role_policy.apprunner_ecr_read,
     aws_iam_role_policy.apprunner_ssm
   ]
 }
