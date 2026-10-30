@@ -28,11 +28,11 @@ resource "aws_ecr_repository" "nexusdesk" {
 
 resource "aws_ecr_lifecycle_policy" "trim_old_images" {
   repository = aws_ecr_repository.nexusdesk.name
-  policy     = jsonencode({
+  policy = jsonencode({
     rules = [{
       rulePriority = 1
       description  = "Keep the ten newest images for demo builds"
-      selection    = {
+      selection = {
         tagStatus   = "any"
         countType   = "imageCountMoreThan"
         countNumber = 10
@@ -79,7 +79,7 @@ data "aws_iam_policy_document" "ecr_push" {
     resources = ["*"]
   }
   statement {
-    sid     = "PushImagesToCloudForgeRepositoryOnly"
+    sid = "PushImagesToCloudForgeRepositoryOnly"
     actions = [
       "ecr:BatchCheckLayerAvailability",
       "ecr:CompleteLayerUpload",
