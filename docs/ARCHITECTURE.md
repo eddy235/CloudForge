@@ -1,10 +1,35 @@
-# CloudForge v0.2 architecture
+# CloudForge architecture
 
 ## Goal
-Practice cloud supply-chain security and Infrastructure as Code **before** paying for workloads. The application is the isolated **fictional NexusDesk demo**, not the operational helpdesk.
+Practice cloud delivery and supply-chain security around the isolated **fictional NexusDesk demo**. The main track uses the existing Render Free service; AWS remains an optional, unprovisioned reference.
+
+## Active Render track
 
 ```mermaid
-flowchart LR
+flowchart TD
+    Repo["CloudForge source"] --> CI["CI builds and security tests"]
+    Upstream["Pinned NexusDesk source"] --> CI
+    CI --> Evidence["Scan, SBOM and check reports"]
+    CI --> Review{"Manual release review"}
+    Review --> Render["Render Docker service"]
+    Render --> Verify["HTTPS operational checks"]
+    Verify --> Evidence
+```
+
+The base image is digest-pinned and workflow actions are SHA-pinned. The image
+scan fails on fixable HIGH/CRITICAL vulnerabilities and retains all findings.
+The SBOM inventories the CI image; dependency ranges still resolve during the
+separate Render build. Automatic deployments are off, Render uses TCP health
+checks and the service is not managed by the optional Blueprint.
+
+The checker verifies the currently deployed app without cloud credentials. It
+does not deploy code or attest the running image's source revision. See
+[operations and evidence limits](OPERATIONS.md).
+
+## Optional AWS reference
+
+```mermaid
+flowchart TD
     A[CloudForge GitHub Repository] --> B[CI: source + tests]
     N[NexusDesk pinned v1.0 source] --> B
     B --> C[Build non-root Docker image]

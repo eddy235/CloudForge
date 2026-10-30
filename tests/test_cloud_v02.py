@@ -123,7 +123,7 @@ class CloudDeploymentSecurityTests(unittest.TestCase):
             return 404, {}, b"blocked"
 
         with patch("scripts.smoke_cloud.probe", side_effect=unsafe_probe):
-            with self.assertRaisesRegex(AssertionError, "Internal route"):
+            with self.assertRaisesRegex(AssertionError, "GET /admin/"):
                 verify("https://demo.eu-west-1.awsapprunner.com")
 
 

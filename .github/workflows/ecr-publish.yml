@@ -27,9 +27,11 @@ jobs:
             exit 1
           fi
       - name: Checkout CloudForge
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: Checkout pinned NexusDesk v1.0 application
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: eddy235/NexusDesk
           ref: 12a96a72418d13dd49f918584f7140a402aff0fa
@@ -38,13 +40,13 @@ jobs:
       - name: Build reviewed image
         run: docker build -t cloudforge-demo:test .
       - name: Request short-lived AWS credentials using GitHub OIDC
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION || 'eu-west-1' }}
           role-session-name: CloudForgeManualPush
       - name: Authenticate to ECR
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
       - name: Push immutable commit-tagged image
         env:
           REPO: ${{ vars.ECR_REPOSITORY_URI }}

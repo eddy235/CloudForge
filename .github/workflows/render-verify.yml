@@ -1,0 +1,43 @@
+name: Verify live Render demo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/smoke_cloud.py
+      - .github/workflows/render-verify.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudforge-render-verification
+  cancel-in-progress: true
+
+jobs:
+  deployed-demo:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout CloudForge verifier
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Check the currently deployed demo (does not deploy a revision)
+        run: |
+          python scripts/smoke_cloud.py https://cloudforge-demo.onrender.com \
+            --attempts 8 --report reports/render-verification.json
+      - name: Retain the operational evidence on success or failure
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: render-verification-${{ github.run_id }}
+          path: reports/render-verification.json
+          retention-days: 7
+          if-no-files-found: error
