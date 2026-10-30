@@ -51,7 +51,7 @@ class RenderDeploymentTests(unittest.TestCase):
 
     def test_render_build_is_checked_by_ci_without_cloud_credentials(self):
         workflow = read(".github/workflows/ci.yml")
-        self.assertIn("docker build -f Dockerfile.render", workflow)
+        self.assertIn("docker build --file Dockerfile.render", workflow)
         self.assertIn("scripts/smoke_local.py", workflow)
         self.assertNotIn("terraform apply", workflow)
         self.assertNotIn("aws-actions/configure-aws-credentials", workflow)
