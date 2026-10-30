@@ -32,7 +32,7 @@ jobs:
         with:
           terraform_version: "1.12.2"
       - name: Check formatting
-        run: terraform -chdir=infra/terraform fmt -check -recursive
+        run: terraform -chdir=infra/terraform fmt -check -diff -recursive
       - name: Initialize locally without a backend
         run: terraform -chdir=infra/terraform init -backend=false -input=false
       - name: Validate infrastructure code (no AWS apply)
