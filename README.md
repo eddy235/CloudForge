@@ -1,10 +1,29 @@
-# CloudForge v0.2 — Secure AWS Runtime Blueprint
+# CloudForge — Secure Cloud & DevSecOps (AWS optional)
 
 **Cloud engineering · Docker · Terraform · AWS ECR · GitHub Actions · OIDC · Python**
 
 CloudForge is a portfolio engineering project that turns [NexusDesk v1.0](https://github.com/eddy235/NexusDesk) into a reproducible, security-reviewed container image, introduces automated CI checks, and describes an optional AWS deployment path. It deliberately builds the public **fictional-data demo**—not the operational helpdesk.
 
 > **Current scope: v0.2 infrastructure and deployment workflow, tested offline. AWS infrastructure has NOT been provisioned and no AWS deployment URL exists yet.**
+
+## AWS-free deployment track
+
+**An AWS account is not required to continue CloudForge.** The project now
+includes a Docker build and `render.yaml` for deployment on Render, which
+already hosts the separate NexusDesk demo, SecureScan and portfolio site.
+
+- `Dockerfile.render` pulls the exact pinned public NexusDesk SHA during
+  the image build so Render can build from the CloudForge repository alone.
+- A **Free** Render web-service Blueprint defines a fictional read-only demo,
+  a health check, GitHub CI-gated automatic deployments and a generated secret.
+- GitHub CI builds and tests the Render image alongside the original local
+  Docker and AWS Terraform checks.
+- **Deployment is optional and has not been created** by the source changes.
+  Review your Render workspace's Free instance-hours and bandwidth first.
+- AWS App Runner remains a separate, disabled-by-default learning blueprint
+  and has **not** been deployed or tested against an AWS account.
+
+See [AWS-free Render deployment instructions](docs/RENDER_DEPLOYMENT.md).
 
 ## What works in this release
 
@@ -79,7 +98,8 @@ The dedicated GitHub repository is **[`eddy235/CloudForge`](https://github.com/e
 
 ## Project materials
 
-- [AWS v0.2 deployment instructions, costs and rollback](docs/AWS_DEPLOYMENT.md)
+- [Render deployment (no AWS account required)](docs/RENDER_DEPLOYMENT.md)
+- [Optional AWS v0.2 deployment instructions, costs and rollback](docs/AWS_DEPLOYMENT.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Operator runbook](docs/RUNBOOK.md)
 - [Security boundaries](SECURITY.md)
