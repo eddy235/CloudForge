@@ -52,7 +52,7 @@ class CloudDeploymentSecurityTests(unittest.TestCase):
         self.assertIn('DJANGO_ENABLE_HSTS         = "true"', hcl)
         self.assertIn('NEXUSDESK_DEMO_MODE        = "true"', hcl)
         self.assertIn('DJANGO_DEBUG               = "false"', hcl)
-        self.assertIn('DJANGO_ALLOWED_HOSTS       = ".awsapprunner.com"', hcl)
+        self.assertIn('DJANGO_ALLOWED_HOSTS       = ".awsapprunner.com,localhost,127.0.0.1"', hcl)
 
     def test_access_roles_have_service_scoped_trust(self):
         hcl = read("infra/terraform/apprunner.tf")
